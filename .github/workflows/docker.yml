@@ -36,12 +36,17 @@ jobs:
           output: trivy-report.json
           exit-code: "0"
 
+      - name: Template HTML Trivy
+        run: |
+          mkdir -p contrib
+          curl -sSL -o contrib/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/v0.70.0/contrib/html.tpl
+
       - name: Rapport Trivy (HTML)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}:ci
           format: template
-          template: "@/contrib/html.tpl"
+          template: "@contrib/html.tpl"
           output: trivy-report.html
           exit-code: "0"
 
@@ -50,7 +55,7 @@ jobs:
         run: |
           echo "### Rapport Trivy" >> "$GITHUB_STEP_SUMMARY"
           for s in CRITICAL HIGH MEDIUM; do
-            n=$(jq "[.Results[]?.Vulnerabilities[]? | select(.Severity==\"$s\")] | length" trivy-report.json)
+            n=$(jq "[.Results[]?.Vulnerabilities[]? | select(.Severity==\"$s\")] | length" trivy-report.json 2>/dev/null || echo "?")
             echo "- $s : $n" >> "$GITHUB_STEP_SUMMARY"
           done
 
